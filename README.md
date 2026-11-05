@@ -1,17 +1,41 @@
-# cafeteria_escom
+# CafeterIA ESCOM ☕📱
 
-Aplicacion de pedidos en linea para la cafeteria de la ESCOM
+> **Aplicación de pedidos en línea y gestión para la cafetería de la ESCOM - IPN.**  
+> Proyecto desarrollado para la asignatura **Desarrollo de Aplicaciones Móviles Nativas (DAMN - 20271)**.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 📌 Documentación Completa
 
-A few resources to get you started if this is your first Flutter project:
+Para revisar la especificación completa, arquitectura limpia, alineación con la rúbrica y reporte de inicialización, consulta:
+👉 **[PROYECTO_CAFETERIA_ESCOM.md](./PROYECTO_CAFETERIA_ESCOM.md)**
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🚀 Arquitectura y Tecnologías Principales
+
+- **Framework:** Flutter 3.44+ / Dart 3.12+
+- **Arquitectura:** Clean Architecture en 3 capas (Presentation, Domain, Data)
+- **Gestor de Estado:** Flutter Riverpod
+- **Enrutamiento:** GoRouter
+- **Backend & Nube:** Firebase Auth, Cloud Firestore, Firebase Storage
+- **Base de Datos Local (Offline):** SQLite (`sqflite`)
+- **Diseño Visual:** Material Design 3 con colores institucionales IPN/ESCOM
+
+---
+
+## 🛠️ Comandos de Inicio
+
+```bash
+# Instalar dependencias
+flutter pub get
+
+# Ejecutar análisis estático (0 issues)
+flutter analyze
+
+# Ejecutar pruebas automatizadas
+flutter test
+
+# Correr la app en emulador o dispositivo
+flutter run
+```
