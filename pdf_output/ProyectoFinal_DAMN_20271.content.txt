@@ -1,0 +1,102 @@
+Desarrollo de Aplicaciones Móviles Nativas
+aplicaciones móviles.
+JAORMarco estándar e independiente del dominio para la especificación, desarrollo y evaluación académica de 
+DAMN - 20271
+Requerimientos
+----------------Page (0) Break----------------
+Desarrollo de Aplicaciones Móviles                               Nativas
+JAORla aplicación móvil, universales para cualquier caso de uso.
+Definición de las capacidades esenciales y módulos del sistema que determinan "qué hace" 
+Requerimientos Funcionales (RF)
+----------------Page (1) Break----------------
+Desarrollo de Aplicaciones Móviles                               Nativas
+externos.                                                                                                                                                                                             olvidada.
+(correo/contraseña) o proveedores OAuth                           preferencias generales de la cuenta.                                      seguro y recuperación de contraseña 
+JAORautenticación mediante credenciales locales                        personales del usuario, fotografía de avatar y                      JWT/Tokens, opción de cierre de sesión Permitir el alta de nuevos usuarios y la                                  Visualizar, actualizar y editar los datos                                   Mantenimiento de sesión activa mediante 
+Registro e Ingreso                                     Gestión de Perfil                                         Control de Sesión
+RF1: Usuarios y Autenticación
+----------------Page (2) Break----------------
+Desarrollo de Aplicaciones Móviles                               Nativas
+accidentales.
+borrado con confirmación previa del usuario para prevenir pérdidas 
+JAORActualizar y Eliminar: Permitir modificación de registros existentes y                                de una vista detallada individual para cada registro seleccionado.Filtrado y Orden: Clasificación por categorías, fechas o estado, además consultar la información.
+nuevos elementos del negocio e interfaces tipo lista/tarjetas para                                     elementos de la lista en tiempo real.
+Crear y Leer: Formularios con validación en tiempo real para registrar                              Búsqueda Directa: Campo de búsqueda por palabras clave para filtrar 
+Operaciones Fundamentales (CRUD)                                  Búsqueda, Filtros y Detalle
+RF2: Gestión de Datos (CRUD)
+----------------Page (3) Break----------------
+Desarrollo de Aplicaciones Móviles                               Nativas
+(SQLite/Room/CoreData) para consultar información básica sin internet.
+JAORPersistencia Local (Offline): Almacenamiento en caché 
+desde galería y uso opcional de GPS.
+Integración con Hardware: Captura de fotos con la cámara o selección 
+por acciones o recordatorios.
+Notificaciones Locales: Alertas y avisos en el dispositivo desencadenados 
+(Drawer) con flujo claro entre vistas.
+Navegación Fluid: Estructura mediante Menú Inferior (Bottom Bar) o Lateral 
+RF3: UI, Sensores y Notificaciones
+----------------Page (4) Break----------------
+Desarrollo de Aplicaciones Móviles                               Nativas
+JAORdeterminan "cómo se comporta" el sistema.Atributos de calidad, rendimiento, restricciones técnicas y estándares de usabilidad que 
+Requerimientos No Funcionales (RNF)
+----------------Page (5) Break----------------
+Desarrollo de Aplicaciones Móviles                              Nativas
+el hilo principal.                                                                                                                                                                                  orientados al usuario.
+mantener 60 fps en transiciones sin bloquear JAORresoluciones y densidades de pantalla (DPI).                        (skeletons/spinners) y mensajes de error 
+segundos bajo conexiones estándar y                                    controles, imágenes y tipografía a distintas                          funciones clave), estados de carga 
+Las pantallas deben cargar en menos de 2.0                         Interfaz responsiva que ajusta correctamente                     Navegación intuitiva (máximo 3 toques para 
+Tiempo de Respuesta                             Diseño Adaptativo                                    Usabilidad y Feedback
+RNF1: Rendimiento y Experiencia (UX)
+----------------Page (6) Break----------------
+Desarrollo de Aplicaciones Móviles                               Nativas
+control de versiones mediante Git.                                                                          de carpetas modular.
+Mantenibilidad
+Uso de arquitectura limpia (MVVM / MVC), código documentado y                Repositorio con commits periódicos y estructura 
+en segundo plano para evitar sobrecalentamiento.                                             continuo.
+Eficiencia de Recursos
+Optimización en el consumo de memoria RAM y liberación de procesos        Consumo máximo de RAM < 180 MB en uso 
+JAORante errores de red o servidor.                                                                                 demostración en vivo.Confiabilidad
+Manejo global de excepciones para evitar el cierre inesperado (crash)            Tasa de fallos graves igual a 0% durante la 
+de tokens y almacenamiento con Hash para datos sensibles.                            código duro (Hardcoded).
+Seguridad
+Comunicación encriptada mediante HTTPS/TLS. Almacenamiento seguro      Sin credenciales ni llaves API expuestas en 
+Atributo                                                           Especificación Técnica                                                                                        Criterio de Aceptación
+RNF2: Seguridad, Estabilidad y Código
+----------------Page (7) Break----------------
+Desarrollo de Aplicaciones Móviles                               Nativas
+JAORde competencia.Matriz estandarizada para evaluar el desempeño del proyecto final en cuatro niveles claros 
+Rúbrica de Evaluación Académica
+----------------Page (8) Break----------------
+Desarrollo de Aplicaciones Móviles                               Nativas
+presentación fluida del equipo.                    clara pero poco estructurada.                       durante la defensa.
+(10%)
+(diagramas, requerimientos) y                      inconsistencias menores; presentación       incapacidad para explicar la arquitectura 
+Documentación y Exposición
+Documento técnico completo                       Documentación completa con                      Documentación incompleta o ausente; 
+respuesta <2s y manejo de errores.             responsividad en algunas pantallas.
+lenta o bloqueos constantes en el hilo principal.
+Diseño UI/UX y RNF (20%)             navegación fluida, tiempos de                      estéticos menores o falta de 
+Interfaz deficiente, textos superpuestos, app 
+Diseño profesional, responsivo,                    Interfaz funcional pero con detalles 
+JAORy Git activo.                                                       concentrado en pocas entregas.                   versiones.
+Arquitectura y Código (30%)         código limpio, modular, sin duplicación      comentarios, historial de Git                         patrón claro y sin repositorio de control de 
+Aplica arquitectura clara (MVVM/MVC),    Estructura básica comprensible, pocos       Código desorganizado en un solo archivo, sin 
+la demostración.                                              secundarios.
+presenta errores críticos que impiden la prueba.
+Cumplimiento Funcional (40%)    (Auth, CRUD, Sensores/UI) sin fallos en      fallos menores en flujos alternativos o 
+Faltan módulos principales del CRUD o la app 
+Satisface el 100% de los RF definidos          Cumple con el 80% de los RF. Presenta 
+Criterio                                             Excelente (100%)                                        Satisfactorio (80%)                                   En Desarrollo / Insuficiente (<60%)
+Matriz de Evaluación del Proyecto
+----------------Page (9) Break----------------
+Desarrollo de Aplicaciones Móviles                               Nativas
+exposición oral.
+10% Entregables y Defensa: Especificación escrita, diagramas UML y 
+Calificación Total
+JAORrendimiento (RNF).20% Experiencia de Usuario (UI/UX): Atractivo visual, diseño responsivo y 
+Git y arquitectura.
+30% Calidad Técnica del Código: Estructura, buenas prácticas, repositorio 
+100%        autenticación e interacción técnica.
+40% Demostración Funcional: Funcionamiento correcto del CRUD, 
+Ponderación Final del Proyecto
+----------------Page (10) Break----------------
