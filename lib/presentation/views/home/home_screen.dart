@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
+import '../menu/menu_screen.dart';
 import '../profile/profile_screen.dart';
 
 /// Pantalla principal con barra de navegación inferior (Bottom Navigation Bar).
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
-      _buildMenuTab(),
+      const MenuScreen(),
       _buildCartTab(),
       _buildOrdersTab(),
       const ProfileScreen(),
@@ -90,33 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
       default:
         return AppStrings.appName;
     }
-  }
-
-  Widget _buildMenuTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.fastfood_outlined, size: 72, color: AppColors.primary),
-          const SizedBox(height: 16),
-          Text(
-            'Catálogo de la Cafetería',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 8),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'Aquí se listarán las categorías y productos disponibles para ordenar.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildCartTab() {

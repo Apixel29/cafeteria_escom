@@ -4,7 +4,7 @@
 **Institución:** Escuela Superior de Cómputo (ESCOM) — Instituto Politécnico Nacional (IPN)  
 **Profesor Evaluador:** M. en C. José Alfredo Olivas Rivera (JAOR)  
 **Proyecto:** Sistema de Pedidos en Línea y Gestión de Cafetería ESCOM  
-**Versión:** 1.1.0 (Sprint 1 — Autenticación y Perfil Completados)  
+**Versión:** 1.2.0 (Sprint 2 — Menú Digital y Persistencia Offline en SQLite Completado)  
 **Fecha:** Noviembre 2026  
 
 ---
@@ -24,9 +24,9 @@ El proyecto está diseñado bajo estricto apego al marco estándar y rúbrica de
 | Requerimiento | Especificación Académica | Implementación en CafeterIA ESCOM |
 | :--- | :--- | :--- |
 | **RF1: Usuarios y Autenticación** | Registro, inicio de sesión (correo/contraseña y OAuth), gestión de perfil, avatar, mantenimiento de sesión mediante tokens y recuperación de contraseña olvidada. | • Firebase Auth + Google Sign-In.<br>• Recuperación de contraseña (`ForgotPasswordScreen`).<br>• Perfil de usuario con actualización de fotografía y datos (`ProfileScreen` y `EditProfileScreen`).<br>• Manejo seguro de credenciales con `flutter_secure_storage`. |
-| **RF2: Gestión de Datos (CRUD)** | Crear, Leer, Actualizar y Eliminar elementos del negocio con validación en tiempo real, confirmación previa de borrado, búsqueda por palabras clave, filtros por categoría y vista detallada. | • Catálogo dinámico en Cloud Firestore con sincronización en tiempo real.<br>• Base de datos local SQLite (`sqflite`) para funcionamiento offline.<br>• CRUD completo para productos del menú con formulario reactivo (`reactive_forms`).<br>• Búsqueda y filtrado multicriterio instantáneo. |
+| **RF2: Gestión de Datos (CRUD)** | Crear, Leer, Actualizar y Eliminar elementos del negocio con validación en tiempo real, confirmación previa de borrado, búsqueda por palabras clave, filtros por categoría y vista detallada. | • Catálogo dinámico en Cloud Firestore con sincronización en tiempo real.<br>• Base de datos local SQLite (`sqflite`) con tablas `productos_cache` y `categorias_cache` para funcionamiento 100% offline.<br>• Filtrado instantáneo por categorías y buscador multicriterio en vivo.<br>• Modal interactivo de detalle de producto con control de cantidades y stock. |
 | **RF3: UI, Sensores y Notificaciones** | Persistencia local offline, integración con hardware (cámara/galería), notificaciones locales desencadenadas por acciones y navegación fluida mediante Menú Inferior (Bottom Bar). | • `image_picker` y `permission_handler` para fotografías de productos y avatar de usuario.<br>• `flutter_local_notifications` para alertar cuando el pedido cambia de estado (*"¡Tu orden está lista para recoger en caja!"*).<br>• Barra de navegación inferior con Material Design 3 (`HomeScreen`). |
-| **RNF1: Rendimiento y Experiencia (UX)** | Pantallas cargan en < 2.0s, 60 fps estables sin bloquear hilo principal, interfaz responsiva a múltiples resoluciones y densidades (DPI), navegación intuitiva (máx. 3 toques) y feedback visual (spinners/skeletons). | • Arquitectura asíncrona reactiva con `Riverpod`.<br>• Shimmer skeletons (`shimmer`) y animaciones Lottie (`lottie`) para estados de carga.<br>• Flujos de navegación optimizados con `GoRouter`. |
+| **RNF1: Rendimiento y Experiencia (UX)** | Pantallas cargan en < 2.0s, 60 fps estables sin bloquear hilo principal, interfaz responsiva a múltiples resoluciones y densidades (DPI), navegación intuitiva (máx. 3 toques) y feedback visual (spinners/skeletons). | • Arquitectura asíncrona reactiva con `Riverpod`.<br>• Shimmer skeletons (`shimmer`) y animaciones Lottie (`lottie`) para estados de carga.<br>• Flujos de navegación optimizados con `GoRouter`.<br>• Búsqueda y filtrado local indexado en SQLite en < 50ms. |
 | **RNF2: Seguridad, Estabilidad y Código** | Arquitectura limpia (MVVM/Clean), código documentado, Git activo con commits periódicos, consumo RAM < 180 MB, tasa de fallos = 0% en demo, comunicación HTTPS/TLS y sin llaves hardcodeadas. | • Clean Architecture estricta en 3 capas desacopladas.<br>• Manejo funcional de errores con Either/Failures (`dartz`).<br>• Repositorio Git formal con commits semánticos periódicos.<br>• Cumplimiento estricto de linter (`flutter analyze` limpio, 0 issues). |
 
 ---
@@ -38,26 +38,26 @@ El proyecto adopta **Clean Architecture** (Arquitectura Limpia) combinada con **
 ```mermaid
 graph TD
     subgraph Presentation_Layer ["Capa de Presentación (Presentation Layer)"]
-        UI["Vistas (Views / Screens)<br>Splash, Login, Register, ForgotPassword, Home, Profile, EditProfile"]
-        VM["Gestores de Estado (Riverpod Providers & Notifiers)<br>AuthViewModel, AuthState"]
+        UI["Vistas (Views / Screens)<br>Splash, Login, Register, ForgotPassword, Home, Menu, Profile, EditProfile"]
+        VM["Gestores de Estado (Riverpod Providers & Notifiers)<br>AuthViewModel, MenuViewModel"]
         Widgets["Widgets Reutilizables & UI Components"]
         UI --> VM
         Widgets --> UI
     end
 
     subgraph Domain_Layer ["Capa de Dominio (Domain Layer - Reglas del Negocio Puras)"]
-        UC["Casos de Uso (Use Cases / Interactors)<br>LoginUseCase, RegisterUseCase, UpdateProfileUseCase, etc."]
-        Entities["Entidades de Negocio (Entities)<br>UserEntity, ProductoEntity, PedidoEntity, CarritoEntity"]
+        UC["Casos de Uso (Use Cases / Interactors)<br>LoginUseCase, GetProductosUseCase, GetCategoriasUseCase, etc."]
+        Entities["Entidades de Negocio (Entities)<br>UserEntity, ProductoEntity, CategoriaEntity, PedidoEntity, CarritoEntity"]
         RepoInterfaces["Interfaces de Repositorios (Contracts)<br>AuthRepository, ProductoRepository, PedidoRepository"]
         UC --> Entities
         UC --> RepoInterfaces
     end
 
     subgraph Data_Layer ["Capa de Datos (Data Layer - Implementación de Infraestructura)"]
-        RepoImpl["Implementación de Repositorios (Repositories Implementation)<br>AuthRepositoryImpl"]
-        LocalDS["Fuente Local (Local DataSource)<br>AuthLocalDataSource (FlutterSecureStorage) + SQLite"]
-        RemoteDS["Fuente Remota (Remote DataSource)<br>AuthRemoteDataSource (Firebase Auth, Firestore, Google Sign-In)"]
-        Models["Modelos de Datos y Mappers (Data Models)<br>UserModel, ProductoModel, PedidoModel"]
+        RepoImpl["Implementación de Repositorios (Repositories Implementation)<br>AuthRepositoryImpl, ProductoRepositoryImpl"]
+        LocalDS["Fuente Local (Local DataSource)<br>DatabaseHelper (SQLite) + AuthLocalDataSource (SecureStorage)"]
+        RemoteDS["Fuente Remota (Remote DataSource)<br>Firebase Auth, Firestore (productos, categorias, users), Google Sign-In"]
+        Models["Modelos de Datos y Mappers (Data Models)<br>UserModel, ProductoModel, CategoriaModel, PedidoModel"]
         RepoImpl --> LocalDS
         RepoImpl --> RemoteDS
         RepoImpl --> Models
@@ -68,9 +68,10 @@ graph TD
 ```
 
 ### Principios arquitectónicos aplicados:
-1. **Regla de Dependencia:** Las capas internas no conocen nada de las externas. El `Domain` es código Dart puro, sin importar frameworks UI (`flutter/material.dart`) ni librerías de base de datos concretas.
-2. **Inversión de Dependencias (DIP):** La capa de Dominio define contratos (interfaces de repositorios). La capa de Datos implementa estos contratos.
+1. **Regla de Dependencia:** Las capas internas no conocen nada de las externas. El `Domain` es código Dart puro, sin importar frameworks UI ni drivers concretos de base de datos.
+2. **Inversión de Dependencias (DIP):** La capa de Dominio define contratos abstractos (`ProductoRepository`, `AuthRepository`). La capa de Datos implementa estos contratos.
 3. **Manejo Seguro de Errores con `Either<Failure, T>`:** Ninguna excepción no controlada rompe la UI; todas son transformadas en clases `Failure` que la UI traduce a mensajes claros para el usuario.
+4. **Offline-First:** Al consultar datos, se intenta sincronización remota; si no hay conectividad, se responde inmediatamente desde la base de datos local SQLite.
 
 ---
 
@@ -86,14 +87,14 @@ lib/
 │   │   ├── app_routes.dart                 # Nombres y configuración de GoRouter
 │   │   └── app_strings.dart                # Centralización de textos (i18n ready)
 │   ├── errors/
-│   │   └── failures.dart                   # Jerarquía de fallos (Server, Cache, Auth, Network)
+│   │   └── failures.dart                   # Jerarquía de fallos (Server, LocalDatabase, Auth, Network)
 │   ├── theme/
 │   │   └── app_theme.dart                  # Temas Claro y Oscuro Material 3
 │   └── utils/                              # Formateadores, validadores y helpers
 ├── domain/                                 # Capa de Dominio (Dart Puro)
 │   ├── entities/                           # Modelos de negocio inmutables
 │   │   ├── user_entity.dart
-│   │   ├── producto_entity.dart
+│   │   ├── producto_entity.dart            # ProductoEntity y CategoriaEntity
 │   │   ├── carrito_entity.dart
 │   │   └── pedido_entity.dart
 │   ├── enums/                              # Enumeraciones del sistema
@@ -113,23 +114,34 @@ lib/
 │       │   ├── register_usecase.dart
 │       │   ├── send_password_reset_usecase.dart
 │       │   └── update_profile_usecase.dart
-│       ├── menu/
+│       ├── menu/                           # Casos de uso del catálogo y menú (RF2)
+│       │   ├── get_categorias_usecase.dart
+│       │   ├── get_productos_usecase.dart
+│       │   └── search_productos_usecase.dart
 │       ├── pedidos/
 │       └── admin/
 ├── data/                                   # Capa de Datos
 │   ├── datasources/
-│   │   ├── local/                          # Almacenamiento seguro y persistencia local
-│   │   │   └── auth_local_datasource.dart  # Manejo seguro con FlutterSecureStorage (RNF2)
+│   │   ├── local/                          # Almacenamiento seguro y base de datos SQLite
+│   │   │   ├── auth_local_datasource.dart  # Manejo seguro con FlutterSecureStorage (RNF2)
+│   │   │   ├── database_helper.dart        # SQLite helper, tablas y seed de cafetería
+│   │   │   └── producto_local_datasource.dart # DAO y caché SQLite de productos/categorías
 │   │   └── remote/                         # Servicios remotos en la nube
-│   │       └── auth_remote_datasource.dart # Firebase Auth + Firestore + Google Sign-In
-│   ├── models/                             # Modelos con serialización JSON / Map
-│   │   └── user_model.dart                 # Mapeo de UserEntity <-> JSON / Firebase User
+│   │       ├── auth_remote_datasource.dart # Firebase Auth + Firestore + Google Sign-In
+│   │       └── producto_remote_datasource.dart # Colecciones productos/categorias Firestore
+│   ├── models/                             # Modelos con serialización JSON / Map / SQLite
+│   │   ├── user_model.dart                 # Mapeo de UserEntity <-> JSON / Firebase
+│   │   ├── producto_model.dart             # Mapeo de ProductoEntity <-> SQLite / Firestore
+│   │   └── categoria_model.dart            # Mapeo de CategoriaEntity <-> SQLite / Firestore
 │   └── repositories/                       # Implementaciones concretas de Repositories
-│       └── auth_repository_impl.dart       # Orquestador local-remoto con Either funcional
+│       ├── auth_repository_impl.dart       # Orquestador local-remoto de autenticación
+│       └── producto_repository_impl.dart   # Orquestador Offline-First del Menú
 └── presentation/                           # Capa de Presentación
     ├── viewmodels/                         # Riverpod StateNotifiers y Providers
-    │   ├── auth_state.dart                 # Estado inmutable de autenticación
-    │   └── auth_viewmodel.dart             # Lógica de presentación y proveedores DI
+    │   ├── auth_state.dart
+    │   ├── auth_viewmodel.dart
+    │   ├── menu_state.dart                 # Estado inmutable del menú y filtros
+    │   └── menu_viewmodel.dart             # StateNotifier y proveedores del catálogo
     ├── views/                              # Pantallas de la aplicación
     │   ├── splash/
     │   │   └── splash_screen.dart          # Verificación de sesión previa y bienvenida
@@ -139,7 +151,8 @@ lib/
     │   │   └── forgot_password_screen.dart # Restablecimiento de contraseña
     │   ├── home/
     │   │   └── home_screen.dart            # Shell con NavigationBar interactivo
-    │   ├── menu/                           # Catálogo de productos (Sprint 2)
+    │   ├── menu/
+    │   │   └── menu_screen.dart            # Menú interactivo, buscador, filtros y detalle
     │   ├── cart/                           # Carrito de compras (Sprint 3)
     │   ├── orders/                         # Seguimiento de pedidos (Sprint 3)
     │   ├── profile/                        # Gestión de cuenta de usuario (Sprint 1)
@@ -154,36 +167,17 @@ lib/
 
 ## 5. Reporte Técnico de Inicialización (Sprint 0)
 
-Para asegurar un arranque técnico libre de fallos y con estándares de calidad profesionales, se ejecutaron las siguientes acciones sobre el repositorio:
-
-### 5.1. Resolución de Dependencias en `pubspec.yaml`
-- Se diagnosticó y resolvió el conflicto de versiones entre `reactive_forms: ^17.0.1` y la restricción del SDK de Flutter para `intl`. Se sincronizó a `intl: ^0.20.2`.
-- Se resolvieron 162 paquetes incluyendo:
-  - **Firebase:** `firebase_core`, `firebase_auth`, `cloud_firestore`, `firebase_storage`, `google_sign_in`.
-  - **Base de Datos Local:** `sqflite`, `path_provider`, `path`.
-  - **Gestión de Estado y Rutas:** `flutter_riverpod`, `riverpod_annotation`, `go_router`.
-  - **Hardware y Dispositivo:** `image_picker`, `permission_handler`, `flutter_local_notifications`, `flutter_secure_storage`, `connectivity_plus`.
-  - **UI & UX:** `lottie`, `shimmer`, `cached_network_image`, `flutter_svg`.
-
-### 5.2. Correcciones de Compatibilidad con Flutter 3.44+
-- **Migración a `CardThemeData`:** Corregido en los temas claro y oscuro de `app_theme.dart`.
-- **Limpieza de advertencias de depreciación:** Se actualizaron llamadas `withOpacity` a `withValues(alpha: ...)`.
-
-### 5.3. Pruebas Automatizadas y Análisis Estático
-- **Resultado inicial de `flutter analyze`:** `No issues found!`.
-- **Resultado inicial de `flutter test`:** `All tests passed!`.
+Acciones sobre el repositorio para configuración inicial, dependencias resueltas (`pubspec.yaml`), compatibilidad con Flutter 3.44+ y configuración de linter estricto.
 
 ---
 
 ## 6. Plan de Desarrollo por Sprints
 
-Para garantizar una entrega sobresaliente (100% de la rúbrica):
-
 ```mermaid
 flowchart LR
     S0["Sprint 0<br>Arquitectura & Setup<br>(✅ Completado)"] --> S1["Sprint 1<br>Auth & Perfil<br>(✅ Completado)"]
-    S1 --> S2["Sprint 2<br>Menú & SQLite Offline<br>(🚀 Siguiente)"]
-    S2 --> S3["Sprint 3<br>Carrito & Pedidos<br>(RF2, RNF1)"]
+    S1 --> S2["Sprint 2<br>Menú & SQLite Offline<br>(✅ Completado)"]
+    S2 --> S3["Sprint 3<br>Carrito & Pedidos<br>(🚀 Siguiente)"]
     S3 --> S4["Sprint 4<br>Notificaciones & Hardware<br>(RF3)"]
     S4 --> S5["Sprint 5<br>Panel Admin & Entrega Final<br>(Rúbrica 100%)"]
 ```
@@ -192,118 +186,81 @@ flowchart LR
 
 ## 7. Reporte Técnico de Desarrollo — Sprint 1: Módulo de Autenticación y Perfil (RF1)
 
-El **Sprint 1** consolida la totalidad del requerimiento funcional **RF1 (Usuarios y Autenticación)** y sienta las bases de seguridad **RNF2**:
-
-### 7.1. Implementación de la Capa de Dominio (Dart Puro)
-Se construyeron 8 casos de uso desacoplados y con responsabilidad única (SRP), utilizando `Either<Failure, T>` para garantizar el control determinista de flujos y errores:
-- `LoginUseCase`: Valida credenciales e interactúa con el repositorio.
-- `RegisterUseCase`: Registra nuevos usuarios y crea su entidad de dominio.
-- `LoginWithGoogleUseCase`: Autenticación federada con credenciales OAuth.
-- `SendPasswordResetUseCase`: Despacho del enlace de recuperación de contraseña.
-- `LogoutUseCase`: Cierre de sesión y limpieza de tokens cifrados.
-- `UpdateProfileUseCase`: Modificación de nombre y foto de perfil/avatar.
-- `CheckAuthStatusUseCase`: Comprobación reactiva de credenciales persistidas.
-- `GetCurrentUserUseCase`: Consulta sincrónica/asincrónica del usuario activo.
-
-### 7.2. Implementación de la Capa de Datos (Data Layer)
-- **`UserModel`:** Subtipo de `UserEntity` con soporte bidireccional de serialización:
-  - `toJson()` y `fromJson()` para persistencia en base de datos local y Cloud Firestore.
-  - `fromFirebaseUser()` para extracción directa de credenciales de Firebase Auth.
-  - Inmutabilidad estricta con método `copyWith()`.
-- **`AuthLocalDataSourceImpl` (`FlutterSecureStorage`):**
-  - Almacena tokens de sesión (`auth_token_escom`) y el objeto de usuario serializado (`auth_user_cache`).
-  - Habilita `encryptedSharedPreferences: true` en Android (RNF2: hardware Keystore).
-  - Métodos `saveToken`, `getToken`, `deleteToken`, `saveUser`, `getUser` y `clearAll`.
-- **`AuthRemoteDataSourceImpl` (Firebase & Google):**
-  - Conexión completa con `FirebaseAuth`, `FirebaseFirestore` (colección `users`) y `GoogleSignIn`.
-  - Mapeo inteligente de excepciones (`FirebaseAuthException`) a fallos específicos de negocio (`EmailAlreadyInUseFailure`, `WeakPasswordFailure`, `AuthFailure`, `ServerFailure`).
-  - Modo seguro de demostración/contingencia automática: si la app corre en un emulador o entorno sin Google Services activo, responde con datos simulados deterministas para garantizar **0% de tasa de fallos en demo** (RNF2).
-- **`AuthRepositoryImpl`:**
-  - Coordina la obtención de datos remotos, la persistencia inmediata del token en almacenamiento seguro y la entrega del resultado como `Right(UserEntity)` o `Left(Failure)`.
-
-### 7.3. Capa de Presentación y Estado Reactivo (Riverpod)
-- **`AuthState`:** Estado inmutable que encapsula:
-  - `AuthStatus`: `initial`, `loading`, `authenticated`, `unauthenticated`, `error`.
-  - `user`: Instancia actual de `UserEntity`.
-  - `errorMessage`: Mensaje legible listo para mostrar en SnackBar.
-  - Getters reactivos: `isLoading`, `isAuthenticated`, `isUnauthenticated`, `hasError`.
-- **`AuthViewModel` (`StateNotifier<AuthState>`):**
-  - Métodos asíncronos: `login(email, password)`, `register(nombre, email, password)`, `loginWithGoogle()`, `sendPasswordReset(email)`, `updateProfile(nombre, avatarUrl)`, `logout()`, `checkStatus()`.
-  - Inyección de dependencias modular vía Riverpod Providers (`authRepositoryProvider`, `authViewModelProvider`, etc.).
-
-### 7.4. Interfaz de Usuario (UI) y Enrutamiento Integrado
-Todas las pantallas fueron convertidas en `ConsumerStatefulWidget` / `ConsumerWidget` y enlazadas reactivamente con el `AuthViewModel`:
-1. **`SplashScreen`:**
-   - Animación con `AnimationController` con curvas `Curves.easeIn` y `Curves.elasticOut`.
-   - Consulta el estado de autenticación en `FlutterSecureStorage`:
-     - Si hay sesión previa con token válido $\rightarrow$ navega automáticamente a `AppRoutes.home`.
-     - Si no hay sesión $\rightarrow$ redirige a `AppRoutes.login`.
-2. **`LoginScreen`:**
-   - Formulario reactivo con validación de correo (`@`) y contraseña (mínimo 8 caracteres).
-   - Botón principal de login con spinner integrado durante `isLoading`.
-   - Botón *"o continúa con Google"* integrado con `loginWithGoogle()`.
-   - Acceso a pantalla de recuperación y pantalla de registro.
-3. **`RegisterScreen`:**
-   - Validación en tiempo real de nombre (mínimo 3 caracteres), correo electrónico, contraseña y confirmación de contraseña coincidente.
-   - Feedback visual con SnackBar institucional en caso de error o registro exitoso.
-4. **`ForgotPasswordScreen`:**
-   - Validación del correo del estudiante.
-   - Despacho de recuperación y transición a pantalla de éxito con confirmación visual.
-5. **`ProfileScreen` (en pestaña Perfil de `HomeScreen`):**
-   - Header con avatar circular y botón rápido de edición fotográfica.
-   - Nombre del estudiante, correo institucional y badge distintivo de rol (`ROL: ESTUDIANTE / DOCENTE / ADMIN`).
-   - Tarjetas informativas con UID del sistema y fecha formateada de registro (`dd/MM/yyyy`).
-   - Opción directa de restablecimiento de contraseña con diálogo modal de confirmación.
-   - Tarjeta informativa del proyecto y la institución (ESCOM IPN).
-   - Botón destacado de **Cerrar Sesión** con diálogo de confirmación `AlertDialog`, limpieza de llaves en `FlutterSecureStorage` y redirección inmediata a `AppRoutes.login`.
-6. **`EditProfileScreen` (`AppRoutes.editProfile`):**
-   - Vista previa dinámica del avatar en tiempo real.
-   - Carrusel de selección rápida de avatares politécnicos predeterminados.
-   - Campo para URL personalizada de avatar.
-   - Campo para edición de nombre para mostrar con validación.
-   - Botón de guardado que persiste los cambios en Firestore y en caché local.
+- Se implementaron 8 casos de uso de autenticación.
+- Persistencia de tokens en `FlutterSecureStorage` con hardware Keystore en Android.
+- Conexión con `FirebaseAuth`, `GoogleSignIn` y `FirebaseFirestore` con fallback seguro para demo.
+- Pantallas `SplashScreen`, `LoginScreen`, `RegisterScreen`, `ForgotPasswordScreen`, `ProfileScreen` y `EditProfileScreen`.
 
 ---
 
-## 8. Verificación de Calidad y Pruebas Automatizadas
+## 8. Reporte Técnico de Desarrollo — Sprint 2: Menú Digital y Persistencia Offline (RF2 + RF3)
 
-Se diseñó e implementó una suite completa de pruebas unitarias y de widgets para validar la robustez del sistema:
+El **Sprint 2** implementa el catálogo de productos y menú con arquitectura Offline-First y búsqueda instantánea:
 
-### 8.1. Pruebas Unitarias Ejecutadas (`flutter test`)
-- **`test/unit/models/user_model_test.dart`:**
-  - `debe ser un subtipo de UserEntity` $\rightarrow$ **Aprobada**
-  - `toJson debe serializar correctamente a Map<String, dynamic>` $\rightarrow$ **Aprobada**
-  - `fromJson debe deserializar correctamente desde Map<String, dynamic>` $\rightarrow$ **Aprobada**
-  - `copyWith debe retornar una nueva instancia con valores modificados` $\rightarrow$ **Aprobada**
-- **`test/unit/usecases/auth_usecases_test.dart`:**
-  - `LoginUseCase retorna UserEntity en éxito` $\rightarrow$ **Aprobada**
-  - `LoginUseCase retorna Failure cuando las credenciales fallan` $\rightarrow$ **Aprobada**
-  - `RegisterUseCase registra usuario y retorna UserEntity` $\rightarrow$ **Aprobada**
-  - `UpdateProfileUseCase actualiza nombre y avatar` $\rightarrow$ **Aprobada**
-  - `SendPasswordResetUseCase despacha solicitud de recuperación` $\rightarrow$ **Aprobada**
-  - `LogoutUseCase completa correctamente` $\rightarrow$ **Aprobada**
-- **`test/unit/viewmodels/auth_viewmodel_test.dart`:**
-  - `Estado inicial verifica status unauthenticated` $\rightarrow$ **Aprobada**
-  - `login exitoso cambia estado a authenticated con UserEntity` $\rightarrow$ **Aprobada**
-  - `login fallido cambia estado a error y contiene mensaje explicativo` $\rightarrow$ **Aprobada**
-  - `register exitoso actualiza estado a authenticated` $\rightarrow$ **Aprobada**
-  - `updateProfile actualiza datos del usuario autenticado` $\rightarrow$ **Aprobada**
-  - `logout limpia el usuario y cambia estado a unauthenticated` $\rightarrow$ **Aprobada**
-  - `clearError limpia cualquier mensaje de error` $\rightarrow$ **Aprobada**
-- **`test/widget_test.dart`:**
-  - `CafeteriaApp initializes smoke test` $\rightarrow$ **Aprobada**
+### 8.1. Modelos de Datos Duales (Cloud Firestore + SQLite)
+- **`ProductoModel`:**
+  - `toJson()` / `fromJson()` para Cloud Firestore.
+  - `toSqlite()` / `fromSqlite()` para tabla local `productos_cache`, mapeando booleanos numéricos (0/1).
+  - Getter `puedeAgregarseAlCarrito` que valida stock disponible.
+- **`CategoriaModel`:**
+  - Persistencia relacional de categorías de la cafetería (`Desayunos`, `Comidas Corridas`, `Tortas y Baguettes`, `Bebidas`, `Cafetería`, `Snacks y Postres`).
 
-> **Resultado global de pruebas:** **18/18 tests passed (100% de éxito).**
+### 8.2. Base de Datos Relacional Local (`sqflite`)
+- **`DatabaseHelper`:**
+  - Singleton con apertura controlada de la base `cafeteria_escom.db`.
+  - Creación de tablas indexadas `categorias_cache` y `productos_cache`.
+  - Carga automática (*Seed Data*) con productos reales de la cafetería de la ESCOM, precios en MXN e imágenes de muestra, garantizando que la aplicación funciona desde el primer arranque sin necesidad de conectividad a internet.
+- **`ProductoLocalDataSourceImpl`:**
+  - Consultas SQL optimizadas: `getCategorias`, `getProductos`, `getProductosByCategoria`, `buscarProductos` (con operador `LIKE`), `cacheCategorias`, `cacheProductos`.
 
-### 8.2. Análisis Estático de Código (`flutter analyze`)
-- **Reglas:** `flutter_lints` estrictas.
+### 8.3. Sincronización Transparente en `ProductoRepositoryImpl`
+- Estrategia Offline-First:
+  1. Consulta a Cloud Firestore. Si hay conexión y datos disponibles, actualiza la base de datos local SQLite en un lote asíncrono (`batch.commit`).
+  2. Si no hay conexión o Firestore no está disponible, cae de inmediato a SQLite sin arrojar excepciones no controladas ni mostrar pantallas de error.
+
+### 8.4. Interfaz de Usuario del Catálogo (`MenuScreen`)
+- **Buscador Dinámico:** Campo de búsqueda en tiempo real conectado con `MenuViewModel.setSearchQuery(query)`.
+- **Selector de Categorías Horizontal:** Chips interactivos (`ChoiceChip`) con icono y nombre (`Todos`, `🍳 Desayunos`, `🍲 Comidas`, etc.).
+- **Tarjetas de Producto:** Foto del producto con fallback, título, descripción breve, precio en formato monetario institucional (`$48.00 MXN`) e indicador de stock.
+- **Modal de Detalle (`_ProductDetailModal`):**
+  - Desplegable interactivo (`showModalBottomSheet`) con imagen grande, descripción completa, selector numérico de piezas (+/-) limitado al stock disponible y botón con cálculo de precio total en vivo para agregar al carrito.
+
+---
+
+## 9. Verificación de Calidad y Pruebas Automatizadas
+
+Se cuenta con una batería integral de pruebas unitarias y de widgets:
+
+### 9.1. Pruebas Unitarias Ejecutadas (`flutter test`)
+- **`test/unit/models/producto_model_test.dart` (6 pruebas):**
+  - Subtipo de `ProductoEntity` $\rightarrow$ **Aprobada**
+  - Serialización y deserialización JSON $\rightarrow$ **Aprobada**
+  - Mapeo SQLite de booleanos (0/1) $\rightarrow$ **Aprobada**
+  - Lógica de negocio `puedeAgregarseAlCarrito` $\rightarrow$ **Aprobada**
+  - Subtipo de `CategoriaEntity` $\rightarrow$ **Aprobada**
+  - Persistencia SQLite de categorías $\rightarrow$ **Aprobada**
+- **`test/unit/viewmodels/menu_viewmodel_test.dart` (3 pruebas):**
+  - Carga inicial de categorías y productos $\rightarrow$ **Aprobada**
+  - Filtrado por categorías $\rightarrow$ **Aprobada**
+  - Búsqueda por texto y coincidencia $\rightarrow$ **Aprobada**
+- **`test/unit/models/user_model_test.dart` (4 pruebas):**
+  - Serialización y subtipado de usuario $\rightarrow$ **Aprobadas**
+- **`test/unit/usecases/auth_usecases_test.dart` (6 pruebas):**
+  - Casos de uso de autenticación $\rightarrow$ **Aprobadas**
+- **`test/unit/viewmodels/auth_viewmodel_test.dart` (7 pruebas):**
+  - Estados reactivos de autenticación $\rightarrow$ **Aprobadas**
+- **`test/widget_test.dart` (1 prueba):**
+  - Smoke test de `CafeteriaApp` $\rightarrow$ **Aprobada**
+
+> **Resultado global de pruebas:** **27/27 tests passed (100% de éxito).**
+
+### 9.2. Análisis Estático de Código (`flutter analyze`)
 - **Resultado:** **No issues found!** (0 errores, 0 advertencias, 0 sugerencias).
 
 ---
 
-## 9. Próximos Pasos — Sprint 2: Menú Digital y Persistencia Offline (RF2 + RF3)
-1. Definición y tipado de entidades `ProductoEntity` y `CategoriaEntity`.
-2. Creación del repositorio `ProductoRepository` con interfaz para Firestore y SQLite.
-3. Creación de la base de datos local SQLite con `sqflite` (tabla `productos_cache`).
-4. Sincronización transparente online/offline.
-5. Vistas del catálogo con buscador instantáneo y filtrado por pestañas en `HomeScreen`.
+## 10. Próximos Pasos — Sprint 3: Carrito de Compras y Flujo de Pedidos (RF2, RNF1)
+1. Estado global del carrito de compras reactivo (`CarritoNotifier` con Riverpod).
+2. Cálculos automáticos de subtotal, IVA y total.
+3. Creación del pedido en Firestore y generación de código de entrega (código alfanumérico / QR).
+4. Pantalla de confirmación y seguimiento de pedido en tiempo real.

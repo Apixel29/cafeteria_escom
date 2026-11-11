@@ -10,7 +10,6 @@ import 'package:cafeteria_escom/domain/usecases/auth/send_password_reset_usecase
 import 'package:cafeteria_escom/domain/usecases/auth/logout_usecase.dart';
 import 'package:cafeteria_escom/domain/usecases/auth/update_profile_usecase.dart';
 import 'package:cafeteria_escom/domain/usecases/auth/check_auth_status_usecase.dart';
-import 'package:cafeteria_escom/presentation/viewmodels/auth_state.dart';
 import 'package:cafeteria_escom/presentation/viewmodels/auth_viewmodel.dart';
 
 class MockAuthRepository implements AuthRepository {
