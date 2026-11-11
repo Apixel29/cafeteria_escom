@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 
-/// Pantalla de recuperación de contraseña.
+/// Pantalla de recuperación de contraseña conectada con [AuthViewModel].
 ///
-/// Permite ingresar un correo institucional o registrado para enviar
-/// el enlace de restablecimiento de contraseña.
-/// TODO Sprint 1: Conectar con [AuthViewModel.resetPassword].
-class ForgotPasswordScreen extends StatefulWidget {
+/// Permite ingresar un correo registrado para despachar el enlace
+/// de restablecimiento vía Firebase Auth (RF1).
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  bool _isLoading = false;
   bool _emailSent = false;
 
   @override
@@ -27,19 +27,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  void _submit() async {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    FocusScope.of(context).unfocus();
 
-    // Simulación de envío de correo de restablecimiento
-    await Future.delayed(const Duration(seconds: 1));
+    final success = await ref
+        .read(authViewModelProvider.notifier)
+        .sendPasswordReset(_emailController.text.trim());
 
-    if (mounted) {
+    if (!mounted) return;
+
+    if (success) {
       setState(() {
-        _isLoading = false;
         _emailSent = true;
       });
+    } else {
+      final error = ref.read(authViewModelProvider).errorMessage ??
+          'No se pudo enviar el correo de recuperación.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -63,6 +75,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildFormView() {
+    final authState = ref.watch(authViewModelProvider);
+    final isLoading = authState.isLoading;
+
     return Form(
       key: _formKey,
       child: Column(
@@ -92,6 +107,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           const SizedBox(height: 32),
           TextFormField(
             controller: _emailController,
+            enabled: !isLoading,
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
               labelText: AppStrings.email,
@@ -101,7 +117,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               if (value == null || value.trim().isEmpty) {
                 return AppStrings.requiredField;
               }
-              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                  .hasMatch(value.trim())) {
                 return AppStrings.invalidEmail;
               }
               return null;
@@ -112,8 +129,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _submit,
-              child: _isLoading
+              onPressed: isLoading ? null : _submit,
+              child: isLoading
                   ? const SizedBox(
                       width: 24,
                       height: 24,

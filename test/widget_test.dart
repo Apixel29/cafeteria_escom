@@ -10,10 +10,11 @@ void main() {
       ),
     );
 
-    // Let the splash screen timer and animations settle
-    await tester.pumpAndSettle(const Duration(seconds: 3));
+    // Avanzar el tiempo para resolver la animación y el temporizador del SplashScreen
+    await tester.pump(const Duration(milliseconds: 1600));
+    await tester.pump();
 
-    // Verify CafeteriaApp builds successfully
+    // Verificar que CafeteriaApp se monta exitosamente
     expect(find.byType(CafeteriaApp), findsOneWidget);
   });
 }

@@ -8,6 +8,7 @@ import '../../presentation/views/auth/login_screen.dart';
 import '../../presentation/views/auth/register_screen.dart';
 import '../../presentation/views/auth/forgot_password_screen.dart';
 import '../../presentation/views/home/home_screen.dart';
+import '../../presentation/views/profile/edit_profile_screen.dart';
 
 // ── Nombres de rutas (constantes) ─────────────────────────
 class AppRoutes {
@@ -56,6 +57,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.forgotPassword,
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.editProfile,
+        builder: (context, state) => const EditProfileScreen(),
       ),
       GoRoute(
         path: AppRoutes.home,

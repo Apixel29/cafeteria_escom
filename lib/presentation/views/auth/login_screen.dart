@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 
-/// Pantalla de inicio de sesión.
+/// Pantalla de inicio de sesión conectada reactivamente con [AuthViewModel].
 ///
-/// Permite autenticarse con email/contraseña o con Google.
-/// TODO Sprint 1: Conectar con [AuthViewModel] via Riverpod.
-class LoginScreen extends StatefulWidget {
+/// Permite autenticarse con correo/contraseña o mediante Google OAuth (RF1).
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -29,22 +29,63 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() async {
+  Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
+    // Ocultar teclado
+    FocusScope.of(context).unfocus();
 
-    // TODO Sprint 1: ref.read(authViewModelProvider.notifier).login(...)
-    await Future.delayed(const Duration(seconds: 1)); // Simulación temporal
+    final success = await ref.read(authViewModelProvider.notifier).login(
+          _emailController.text,
+          _passwordController.text,
+        );
 
-    if (mounted) {
-      setState(() => _isLoading = false);
+    if (!mounted) return;
+
+    if (success) {
       context.go(AppRoutes.home);
+    } else {
+      final error = ref.read(authViewModelProvider).errorMessage ??
+          'Error al iniciar sesión. Verifica tus datos.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    FocusScope.of(context).unfocus();
+
+    final success =
+        await ref.read(authViewModelProvider.notifier).loginWithGoogle();
+
+    if (!mounted) return;
+
+    if (success) {
+      context.go(AppRoutes.home);
+    } else {
+      final error = ref.read(authViewModelProvider).errorMessage;
+      if (error != null && !error.contains('cancelado')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authViewModelProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -53,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              // Header
+              // Header con logo institucional
               Center(
                 child: Column(
                   children: [
@@ -88,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 40),
 
-              // Formulario
+              // Formulario reactivo
               Form(
                 key: _formKey,
                 child: Column(
@@ -97,16 +138,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      enabled: !isLoading,
                       decoration: const InputDecoration(
                         labelText: AppStrings.email,
                         prefixIcon: Icon(Icons.email_outlined),
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
+                        if (value == null || value.trim().isEmpty) {
                           return AppStrings.requiredField;
                         }
                         if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                            .hasMatch(value)) {
+                            .hasMatch(value.trim())) {
                           return AppStrings.invalidEmail;
                         }
                         return null;
@@ -118,6 +160,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
+                      enabled: !isLoading,
                       decoration: InputDecoration(
                         labelText: AppStrings.password,
                         prefixIcon: const Icon(Icons.lock_outline),
@@ -148,17 +191,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () =>
-                            context.push(AppRoutes.forgotPassword),
+                        onPressed: isLoading
+                            ? null
+                            : () => context.push(AppRoutes.forgotPassword),
                         child: const Text(AppStrings.forgotPassword),
                       ),
                     ),
                     const SizedBox(height: 24),
 
-                    // Botón principal
+                    // Botón principal de Login
                     ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      child: _isLoading
+                      onPressed: isLoading ? null : _login,
+                      child: isLoading
                           ? const SizedBox(
                               height: 20,
                               width: 20,
@@ -171,7 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Divisor
+                    // Divisor visual
                     Row(
                       children: [
                         const Expanded(child: Divider()),
@@ -187,29 +231,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Botón Google
+                    // Botón Google Sign-In
                     OutlinedButton.icon(
-                      onPressed: () {
-                        // TODO Sprint 1: loginWithGoogle()
-                      },
-                      icon: const Text('G',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF4285F4),
-                          )),
+                      onPressed: isLoading ? null : _loginWithGoogle,
+                      icon: const Text(
+                        'G',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF4285F4),
+                        ),
+                      ),
                       label: const Text(AppStrings.loginWithGoogle),
                     ),
                     const SizedBox(height: 32),
 
-                    // Link a registro
+                    // Link a pantalla de registro
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(AppStrings.noAccount),
                         TextButton(
-                          onPressed: () =>
-                              context.push(AppRoutes.register),
+                          onPressed: isLoading
+                              ? null
+                              : () => context.push(AppRoutes.register),
                           child: const Text(AppStrings.signUp),
                         ),
                       ],

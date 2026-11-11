@@ -32,6 +32,15 @@ abstract class AuthRepository {
   /// Cierra la sesión del usuario actual.
   Future<void> logout();
 
+  /// Actualiza los datos del perfil del usuario (nombre y/o avatarUrl).
+  Future<Either<Failure, UserEntity>> updateProfile({
+    required String nombre,
+    String? avatarUrl,
+  });
+
+  /// Verifica el estado de autenticación actual consultando el almacenamiento seguro.
+  Future<Either<Failure, UserEntity?>> checkAuthStatus();
+
   /// Retorna el usuario actualmente autenticado, o null si no hay sesión.
   UserEntity? getCurrentUser();
 

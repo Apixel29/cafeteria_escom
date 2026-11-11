@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 
-/// Pantalla de registro de nuevo usuario.
-/// TODO Sprint 1: Conectar con [AuthViewModel].
-class RegisterScreen extends StatefulWidget {
+/// Pantalla de registro de nuevo usuario conectada reactivamente con [AuthViewModel].
+///
+/// Valida datos en tiempo real y registra la cuenta en Firebase Auth + Firestore (RF1).
+class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -21,7 +24,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -32,18 +34,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _register() async {
+  Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      setState(() => _isLoading = false);
+
+    FocusScope.of(context).unfocus();
+
+    final success = await ref.read(authViewModelProvider.notifier).register(
+          nombre: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+
+    if (!mounted) return;
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('¡Cuenta creada con éxito! Bienvenido a CafeterIA ESCOM'),
+          backgroundColor: AppColors.success,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
       context.go(AppRoutes.home);
+    } else {
+      final error = ref.read(authViewModelProvider).errorMessage ??
+          'Error al registrar la cuenta. Inténtalo de nuevo.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authViewModelProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(AppStrings.register),
@@ -70,13 +100,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 8),
                 Text(
                   AppStrings.appTagline,
-                  style: TextStyle(color: AppColors.textSecondary),
+                  style: const TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 32),
 
-                // Nombre
+                // Campo Nombre
                 TextFormField(
                   controller: _nameController,
+                  enabled: !isLoading,
                   textCapitalization: TextCapitalization.words,
                   decoration: const InputDecoration(
                     labelText: AppStrings.fullName,
@@ -94,20 +125,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Email
+                // Campo Email
                 TextFormField(
                   controller: _emailController,
+                  enabled: !isLoading,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
                     labelText: AppStrings.email,
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return AppStrings.requiredField;
                     }
                     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                        .hasMatch(value)) {
+                        .hasMatch(value.trim())) {
                       return AppStrings.invalidEmail;
                     }
                     return null;
@@ -115,9 +147,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Contraseña
+                // Campo Contraseña
                 TextFormField(
                   controller: _passwordController,
+                  enabled: !isLoading,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: AppStrings.password,
@@ -147,6 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Confirmar contraseña
                 TextFormField(
                   controller: _confirmPasswordController,
+                  enabled: !isLoading,
                   obscureText: _obscureConfirm,
                   decoration: InputDecoration(
                     labelText: AppStrings.confirmPassword,
@@ -173,9 +207,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 32),
 
+                // Botón de registro
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
-                  child: _isLoading
+                  onPressed: isLoading ? null : _register,
+                  child: isLoading
                       ? const SizedBox(
                           height: 20,
                           width: 20,
@@ -188,12 +223,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 16),
 
+                // Volver a login
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(AppStrings.hasAccount),
                     TextButton(
-                      onPressed: () => context.pop(),
+                      onPressed: isLoading ? null : () => context.pop(),
                       child: const Text(AppStrings.signIn),
                     ),
                   ],

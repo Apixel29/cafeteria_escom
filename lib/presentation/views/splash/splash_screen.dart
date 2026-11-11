@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_routes.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 
 /// Pantalla de bienvenida que se muestra al iniciar la app.
 ///
-/// Verifica si existe una sesión activa y redirige al usuario
-/// a [HomeScreen] o [LoginScreen] según corresponda.
-/// Muestra el logo y una animación de carga mientras verifica.
-class SplashScreen extends StatefulWidget {
+/// Verifica reactivamente si existe una sesión persistida en el almacenamiento
+/// seguro (`flutter_secure_storage`) y redirige al usuario a [HomeScreen]
+/// o [LoginScreen] según corresponda (RF1).
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -39,19 +41,27 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Simula verificación de sesión y redirige
+    // Verificación asíncrona de token y navegación reactiva
     _checkAuthAndNavigate();
   }
 
   Future<void> _checkAuthAndNavigate() async {
-    // Espera la animación + verificación de token
-    await Future.delayed(const Duration(seconds: 2));
+    // Da tiempo para apreciar el logo y la animación de arranque
+    await Future.delayed(const Duration(milliseconds: 1500));
 
     if (!mounted) return;
 
-    // TODO: Reemplazar con lógica real de AuthViewModel
-    // Por ahora siempre va a login para pruebas
-    context.go(AppRoutes.login);
+    // Verificar el estado de autenticación en almacenamiento seguro
+    await ref.read(authViewModelProvider.notifier).checkStatus();
+
+    if (!mounted) return;
+
+    final authState = ref.read(authViewModelProvider);
+    if (authState.isAuthenticated) {
+      context.go(AppRoutes.home);
+    } else {
+      context.go(AppRoutes.login);
+    }
   }
 
   @override

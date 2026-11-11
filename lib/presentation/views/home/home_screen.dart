@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
+import '../profile/profile_screen.dart';
 
 /// Pantalla principal con barra de navegación inferior (Bottom Navigation Bar).
 ///
@@ -25,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _buildMenuTab(),
       _buildCartTab(),
       _buildOrdersTab(),
-      _buildProfileTab(),
+      const ProfileScreen(),
     ];
 
     return Scaffold(
@@ -166,33 +167,6 @@ class _HomeScreenState extends State<HomeScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircleAvatar(
-            radius: 40,
-            backgroundColor: AppColors.primaryLight,
-            child: Icon(Icons.person, size: 50, color: Colors.white),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Estudiante ESCOM',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Configuración de cuenta, historial y preferencias',
-            style: TextStyle(color: AppColors.textSecondary),
           ),
         ],
       ),
